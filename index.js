@@ -3,25 +3,13 @@ const NEW_COVID_CASE_COUNT = "NEW_COVID_CASE_COUNT"
 const HOSPITALIZED_CASE_COUNT = "HOSPITALIZED_CASE_COUNT"
 
 const parseData = (data) => {
-  console.log(data)
-  let cvd = {}
   let maxs = { DEATH_COUNT: 0, NEW_COVID_CASE_COUNT: 0, HOSPITALIZED_CASE_COUNT: 0 }
-  const months = {"Mar": 3, "Apr": 4, "May": 5}
-  for (const [key,val] of Object.entries(coviddata)) {
-    let date = key.substr(5)
-    let month = date.substr(0,3)
-    let day = date.substr(4)
-    day = day.length == 1 ? "0" + day : day
-    let newkey = months[month] + "-" + day
-    cvd[newkey] = val
-   
-    console.log(val)
+  for (const [key,val] of Object.entries(data)) {   
     maxs.DEATH_COUNT = Math.max(maxs.DEATH_COUNT, Math.max.apply(null, val.map(v => +v[DEATH_COUNT])))
     maxs.NEW_COVID_CASE_COUNT = Math.max(maxs.NEW_COVID_CASE_COUNT, Math.max.apply(null, val.map(v => +v[NEW_COVID_CASE_COUNT]||0)))
     maxs.HOSPITALIZED_CASE_COUNT = Math.max(maxs.HOSPITALIZED_CASE_COUNT, Math.max.apply(null, val.map(v => +v[HOSPITALIZED_CASE_COUNT]||0)))
-
   }
-  return [cvd, maxs]
+  return [data, maxs]
 }
 
 const makeDay = dateStr => {
@@ -87,6 +75,5 @@ const renderChart = (data, maxs) => {
 }
 
 let [data, maxs] = parseData(coviddata)
-console.log(maxs)
 setupSlider(data, maxs)
 renderChart(data, maxs)

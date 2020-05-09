@@ -7,6 +7,7 @@ cd coronavirus-data
 git pull
 git rev-list --all --objects -- case-hosp-death.csv | cut -d ' ' -f1 | \
   while read SHA; do \
+    COUNT=$((COUNT+1))
     DATE=`git show --date=short $SHA | head -3 | grep 'Date: ' | awk '{print $2}'`; \
     if [ "${DATE}" != "" ]; then \
       git cat-file -p ${SHA}:case-hosp-death.csv > ../cache/${DATE}.${COUNT}.csv;\
@@ -23,6 +24,8 @@ for fname in `ls *.csv`; do
   parsed=$parsed,$output
 done
 cd ..
-echo \{"${parsed:1}"\} > data.json
+echo \{"${parsed:1}"\} > input.json
 
 rm -rf cache
+node parse_data.js
+rm input.json
