@@ -21,11 +21,11 @@ const getDay = (cvd, day, type) => {
   const keys = Object.keys(cvd).sort()
   const p = cvd[keys[day]]
   let dates = getLongestSequence(cvd)
-  let fields = p.map(k => ({ "Date": new Date(k['DATE_OF_INTEREST']), "Deaths": +k[type]}))
+  let fields = p.map(k => ({ "Date": new Date(k['DATE_OF_INTEREST']), "Amount": +k[type]}))
   let covered = p.map(k => k['DATE_OF_INTEREST'])
   for (date of dates) {
     if (covered.indexOf(date) == -1) {
-      fields.push({"Date": new Date(date), "Deaths": 0})
+      fields.push({"Date": new Date(date), "Amount": 0})
     }
   }
   return [keys[day], fields.sort((a,b) => { a["Date"]-b["Date"] })]
@@ -65,10 +65,10 @@ const renderChart = (data, maxs) => {
 
   document.querySelector("#wd_label").innerHTML = `Reporting date ${label}`
 
-  var svg = dimple.newSvg("#graph", 800, 600)
+  var svg = dimple.newSvg("#graph", 1200, 1000)
   var chart = new dimple.chart(svg, graph)
   chart.addTimeAxis("x", "Date")
-  let yaxis = chart.addMeasureAxis("y", "Deaths")
+  let yaxis = chart.addMeasureAxis("y", "Amount")
   yaxis.overrideMax = Math.ceil(maxs[form_type]/100)*100;
   chart.addSeries(null, dimple.plot.bar);
   chart.draw();
