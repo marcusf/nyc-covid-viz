@@ -19,13 +19,14 @@
   @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
     body, html { background-color: white; margin: 0; padding: 0; font-family: 'Lato', sans-serif; }
-    #body { max-width: 1200px; min-width: 600px background-color: white; border: 1pt solid #aaa; border-top: 0; border-bottom: 0; padding: 14px 14px 40px 14px; margin: auto;  height: 100vh;  }
-    h1 { font-weight: bold; margin-top: 0; padding-top: 4px;  }
+    #body { max-width: 1200px; background-color: white; border: 1pt solid #aaa; border-top: 0; border-bottom: 0; padding: 14px 14px 40px 14px; margin: auto;  height: 100vh;  }
+    h1 { font-weight: bold; margin-top: 0; padding-top: 4px; font-size: 1.5em  }
     p { line-height: 1.5 }
     #controls { padding: 18px; background-color: rgb(220, 229, 236);     display: flex;    justify-content: space-between; margin-top: 24px }
-    #rangeholder { display: inline-block; max-width: 400px; min-width: 250px; padding-left: 8px }
+    #rangeholder { display: inline-block; max-width: 400px; min-width: 100px; padding-left: 8px }
     #wd_label { font-weight: bold }
-    #graph { width: 100%; height: 70vh; margin: 0; padding:  }
+    #graph { width: 100%; height: 70vh; margin: 0; }
+    .right div { display: inline-block }
 
     /* Courtesy of http://danielstern.ca/range.css/#/ */
     input[type=range] {
@@ -126,12 +127,12 @@
       <div id=rangeholder><input type="range" min="0" max="50" value="0" class="slider" id="whichdate"> </div>
       </div>
       <div class=right>
-      <input type="radio" name="mode" id="dc" value="DEATH_COUNT" checked>
-      <label for="dc">Deaths</label>
-      <input type="radio" name="mode" id="nccc" value="NEW_COVID_CASE_COUNT">
-      <label for="nccc">New Cases</label>
-      <input type="radio" name="mode" id="hcc" value="HOSPITALIZED_CASE_COUNT">
-      <label for="hcc">Hospitalizations</label>
+      <div><input type="radio" name="mode" id="dc" value="DEATH_COUNT" checked>
+      <label for="dc">Deaths</label></div>
+      <div><input type="radio" name="mode" id="nccc" value="NEW_COVID_CASE_COUNT">
+      <label for="nccc">New Cases</label></div>
+      <div><input type="radio" name="mode" id="hcc" value="HOSPITALIZED_CASE_COUNT">
+      <label for="hcc">Hospitalizations</label></div>
       </div>
     </div>
     <div id=graph></div>
