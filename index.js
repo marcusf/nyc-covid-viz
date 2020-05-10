@@ -100,10 +100,7 @@ const renderChart = (data, maxs) => {
     new dimple.color("#e74c3c", "#c0392b", 1), new dimple.color("#f1c40f", "#f39c12", 1)
   ];
 
-  window.onresize = function () {
-    chart.draw(0, true);
-};
-
+  window.addEventListener('resize', () => { chart.draw(0, true) })
 
   let x = chart.addTimeAxis("x", "Date", "%m/%e/%y", "%d %b")
   x.addOrderRule("Date")
