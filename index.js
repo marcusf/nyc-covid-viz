@@ -73,7 +73,7 @@ const setupSlider = (data, maxs) => {
   const slider = document.querySelector("#whichdate")
   slider.max = size
   slider.value = size
-  slider.addEventListener("change", e => {
+  slider.addEventListener("input", e => {
     renderChart(data, maxs)
   })
   document.querySelectorAll('input[name="mode"]').forEach(radio => radio.addEventListener("change", e => { 
