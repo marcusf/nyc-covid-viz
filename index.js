@@ -3,18 +3,42 @@ const NEW_COVID_CASE_COUNT = "NEW_COVID_CASE_COUNT"
 const HOSPITALIZED_CASE_COUNT = "HOSPITALIZED_CASE_COUNT"
 
 const parseData = (data) => {
+  dates = Object.keys(data).sort()
   let maxs = { DEATH_COUNT: 0, NEW_COVID_CASE_COUNT: 0, HOSPITALIZED_CASE_COUNT: 0 }
-  for (const [key,val] of Object.entries(data)) {   
+  let yesterday = null, yday = null
+  for (const day of Object.keys(data).sort()) {
+    val = data[day]
+
     maxs.DEATH_COUNT = Math.max(maxs.DEATH_COUNT, Math.max.apply(null, val.map(v => +v[DEATH_COUNT])))
     maxs.NEW_COVID_CASE_COUNT = Math.max(maxs.NEW_COVID_CASE_COUNT, Math.max.apply(null, val.map(v => +v[NEW_COVID_CASE_COUNT]||0)))
     maxs.HOSPITALIZED_CASE_COUNT = Math.max(maxs.HOSPITALIZED_CASE_COUNT, Math.max.apply(null, val.map(v => +v[HOSPITALIZED_CASE_COUNT]||0)))
-  }
-  return [data, maxs]
-}
 
-const makeDay = dateStr => {
-  const date = new Date(dateStr)
-  return `${date.getDate()}/${date.getMonth()}`
+    for (let i = 0; i < val.length; i++) {
+      val[i][DEATH_COUNT] = { Previous: 0, New: parseInt(val[i][DEATH_COUNT])||0 }
+      val[i][NEW_COVID_CASE_COUNT] = { Previous: 0, New: parseInt(val[i][NEW_COVID_CASE_COUNT])||0 }
+      val[i][HOSPITALIZED_CASE_COUNT] = { Previous: 0, New: parseInt(val[i][HOSPITALIZED_CASE_COUNT])||0 }
+    }
+
+    if (yesterday != null) {
+      for (let i = 0; i < yesterday.length; i++) {
+        let dp = yesterday[i][DEATH_COUNT].Previous + yesterday[i][DEATH_COUNT].New
+        let cp = yesterday[i][NEW_COVID_CASE_COUNT].Previous + yesterday[i][NEW_COVID_CASE_COUNT].New
+        let hp = yesterday[i][HOSPITALIZED_CASE_COUNT].Previous + yesterday[i][HOSPITALIZED_CASE_COUNT].New
+        for (let j = 0; j < val.length; j++) {
+          if (val[j].DATE_OF_INTEREST == yesterday[i].DATE_OF_INTEREST) {
+            val[j][DEATH_COUNT] = { Previous: dp, New: val[j][DEATH_COUNT].New - dp }
+            val[j][NEW_COVID_CASE_COUNT] = { Previous: cp, New: val[j][NEW_COVID_CASE_COUNT].New - cp }
+            val[j][HOSPITALIZED_CASE_COUNT] = { Previous: hp, New: val[j][HOSPITALIZED_CASE_COUNT].New - hp }
+            break
+          }
+        }
+      }
+    }
+    yesterday = val
+    yday = day
+  }
+  console.log(data)
+  return [data, maxs]
 }
 
 const getDay = (cvd, day, type) => {
@@ -22,12 +46,14 @@ const getDay = (cvd, day, type) => {
   const p = cvd[keys[day]]
   let dates = getLongestSequence(cvd)
 
-  let fields = p.map(k => ({ "Date": k['DATE_OF_INTEREST'], "Amount": +k[type]}))
+  let prev = p.map(k => ({ "Date": k['DATE_OF_INTEREST'], "Type": "Previous", "Count": +k[type].Previous}))
+  let new_ = p.map(k => ({ "Date": k['DATE_OF_INTEREST'], "Type": "New", "Count": +k[type].New}))
+  let fields = prev.concat(new_)
   let covered = p.map(k => k['DATE_OF_INTEREST'])
   for (date of dates) {
-    console.log(date)
     if (covered.indexOf(date) == -1) {
-      fields.push({"Date": date, "Amount": 0})
+      fields.push({"Date": date, "Type": "Previous", "Count": 0})
+      fields.push({"Date": date, "Type": "New", "Count": 0})
     }
   }
   return [keys[day], fields.sort((a,b) => { return new Date(a["Date"])-new Date(b["Date"]) })]
@@ -69,13 +95,18 @@ const renderChart = (data, maxs) => {
 
   var svg = dimple.newSvg("#graph", "100%", "100%")
   var chart = new dimple.chart(svg, graph)
+  let x = chart.addTimeAxis("x", "Date", "%m/%e/%y", "%d %b")
+  x.addOrderRule("Date")
+  let yaxis = chart.addMeasureAxis("y", "Count")
 
-  chart.addTimeAxis("x", "Date", "%m/%e/%y", "%d %b")
-  let yaxis = chart.addMeasureAxis("y", "Amount")
+  let yaxis2 = chart.addSeries("Type", dimple.plot.bar)
+
+  chart.addLegend(60, 10, 510, 20, "right");
+
   yaxis.overrideMax = Math.ceil(maxs[form_type]/100)*100;
+  yaxis.overrideMin = -50;
   chart.setMargins("50px", "30px", "10px", "50px");
 
-  chart.addSeries(null, dimple.plot.bar);
   chart.draw();
 }
 
