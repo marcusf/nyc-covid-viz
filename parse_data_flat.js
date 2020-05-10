@@ -80,7 +80,7 @@ const sum_n = (report_tree, reporting_date, date_of_interest, n, variable) => {
 const calc_n_day_trail = (days, report_tree, n) => {
     for (let day of days) {
         const { reporting_date, date_of_interest, cases, hospitalized, deaths } = day
-        let yesterday = report_tree[reporting_date].previous_report 
+        let yesterday = reporting_date //report_tree[reporting_date].previous_report 
         if (yesterday) {
             day.deaths_trailing7 = sum_n(report_tree, yesterday, date_of_interest, 7, 'deaths_new')
             day.deaths_older7 = day.deaths - day.deaths_new - day.deaths_trailing7
@@ -88,11 +88,16 @@ const calc_n_day_trail = (days, report_tree, n) => {
             day.cases_trailing7 = sum_n(report_tree, yesterday, date_of_interest, 7, 'cases_new')
             day.cases_older7 = day.cases - day.cases_new - day.cases_trailing7
 
-            day.hospitilized_trailing7 = sum_n(report_tree, yesterday, date_of_interest, 7, 'hospitalized_new')
+            day.hospitalized_trailing7 = sum_n(report_tree, yesterday, date_of_interest, 7, 'hospitalized_new')
             day.hospitalized_older7 = day.hospitalized - day.hospitalized_new - day.hospitalized_trailing7
-        } else {}
-
-        
+        } else {
+            day.deaths_trailing7 = 0
+            day.deaths_older7 = 0
+            day.cases_trailing7 = 0
+            day.cases_older7 = 0
+            day.hospitalized_trailing7 = 0
+            day.hospitalized_older7 = 0
+        }
     }
 }
 

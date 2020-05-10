@@ -22,15 +22,23 @@ const getDay = (cvd, days, day, type) => {
   let dates = getLongestSequence(cvd)
   const p = cvd.filter(l => l.reporting_date == days[day])
 
-  let prev = p.map(k => ({ "Date": k['date_of_interest'], "Type": "Previous", "Count": +k[type+"_last_report"]}))
-  let new_ = p.map(k => ({ "Date": k['date_of_interest'], "Type": "New", "Count": +k[type+"_new"]}))
+  //
+  // {"reporting_date":"2020-03-26","date_of_interest":"2020-03-02","cases":1,"hospitalized":0,"deaths":0,"cases_new":1,"cases_last_report":0,
+  // "hospitalized_new":0,"hospitalized_last_report":0,"deaths_new":0,"deaths_last_report":0,
+  // "deaths_trailing7":0,"deaths_older7":0,"cases_trailing7":0,"cases_older7":0,"hospitilized_trailing7":0,"hospitalized_older7":0}
 
-  let fields = prev.concat(new_)
+  let p0 = p.map(k => ({ "Date": k['date_of_interest'], "Type": "Reported earlier", "Count": +k[type+"_older7"]}))
+  let p1 = p.map(k => ({ "Date": k['date_of_interest'], "Type": "Reported seven days prior", "Count": +k[type+"_trailing7"]}))
+
+  let p2 = p.map(k => ({ "Date": k['date_of_interest'], "Type": `Reported ${days[day]}`, "Count": +k[type+"_new"]}))
+
+  let fields = p0.concat(p1).concat(p2)
   let covered = p.map(k => k['date_of_interest'])
   for (date of dates) {
     if (covered.indexOf(date) == -1) {
-      fields.push({"Date": date, "Type": "Previous", "Count": 0})
-      fields.push({"Date": date, "Type": "New", "Count": 0})
+      fields.push({"Date": date, "Type": "Reported earlier", "Count": 0})
+      fields.push({"Date": date, "Type": "Reported seven days prior", "Count": 0})
+      fields.push({"Date": date, "Type": `Reported ${days[day]}`, "Count": 0})
     }
   }
   return [days[day], fields.sort((a,b) => { return new Date(a["Date"])-new Date(b["Date"]) })]
@@ -72,9 +80,12 @@ const renderChart = (data, days, maxs) => {
   document.querySelector("#wd_label").innerHTML = `Reporting date ${label}`
 
   var svg = dimple.newSvg("#graph", "100%", "100%")
+
   var chart = new dimple.chart(svg, graph)
   chart.defaultColors = [
-    new dimple.color("#e74c3c", "#c0392b", 1), new dimple.color("#f1c40f", "#f39c12", 1)
+    new dimple.color("#f1c40f", "#f39c12", 1), // Older 
+    new dimple.color("#e67e22", "#d35400", 1), // Mid
+    new dimple.color("#e74c3c", "#c0392b", 1), // New
   ];
 
   window.addEventListener('resize', () => { chart.draw(0, true) })
@@ -84,9 +95,14 @@ const renderChart = (data, days, maxs) => {
   let yaxis = chart.addMeasureAxis("y", "Count")
 
   let yaxis2 = chart.addSeries("Type", dimple.plot.bar)
-  yaxis2.addOrderRule("Type", true)
 
-  chart.addLegend(80, 40, 110, 100, "right");
+  yaxis2.addOrderRule((a, b) => {
+    if (a.Type.indexOf("Older") == 0) return 1;
+    if (a.Type.indexOf("days prior") > -1 && b.Type.indexOf("Older") == -1) return -1;
+    return -1;
+  }, true)
+
+  chart.addLegend(62, 25, 110, 100, "left");
 
   yaxis.overrideMax = Math.ceil(maxs[form_type]/100)*100;
   yaxis.overrideMin = -50;
