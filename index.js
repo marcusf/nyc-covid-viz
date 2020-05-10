@@ -112,7 +112,7 @@ const renderChart = (data, maxs) => {
   let yaxis2 = chart.addSeries("Type", dimple.plot.bar)
   yaxis2.addOrderRule("Type", true)
 
-  chart.addLegend(60, 10, 510, 20, "right");
+  chart.addLegend(80, 40, 110, 100, "right");
 
   yaxis.overrideMax = Math.ceil(maxs[form_type]/100)*100;
   yaxis.overrideMin = -50;

@@ -8,5 +8,7 @@
   },
   "author": "marcus.frodin@gmail.com",
   "license": "ISC",
-  "dependencies": {}
+  "dependencies": {
+    "csvtojson": "^2.0.10"
+  }
 }
