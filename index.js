@@ -37,7 +37,6 @@ const parseData = (data) => {
     yesterday = val
     yday = day
   }
-  console.log(data)
   return [data, maxs]
 }
 
@@ -73,12 +72,14 @@ const setupSlider = (data, maxs) => {
   const size = Object.keys(coviddata).length-1  
   const slider = document.querySelector("#whichdate")
   slider.max = size
+  slider.value = size
   slider.addEventListener("change", e => {
     renderChart(data, maxs)
   })
   document.querySelectorAll('input[name="mode"]').forEach(radio => radio.addEventListener("change", e => { 
     renderChart(data, maxs)
   }))
+  slider.focus()
 }
 
 const renderChart = (data, maxs) => {
@@ -95,11 +96,17 @@ const renderChart = (data, maxs) => {
 
   var svg = dimple.newSvg("#graph", "100%", "100%")
   var chart = new dimple.chart(svg, graph)
+  chart.defaultColors = [
+    new dimple.color("#e74c3c", "#c0392b", 1), new dimple.color("#f1c40f", "#f39c12", 1)
+  ];
+
+
   let x = chart.addTimeAxis("x", "Date", "%m/%e/%y", "%d %b")
   x.addOrderRule("Date")
   let yaxis = chart.addMeasureAxis("y", "Count")
 
   let yaxis2 = chart.addSeries("Type", dimple.plot.bar)
+  yaxis2.addOrderRule("Type", true)
 
   chart.addLegend(60, 10, 510, 20, "right");
 
