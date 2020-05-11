@@ -26,7 +26,7 @@ done
 cd ..
 echo \{"${parsed:1}"\} > input.json
 
-#rm -rf cache
+rm -rf cache
 node parse_data.js
 node parse_data_flat.js
 rm input.json
