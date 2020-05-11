@@ -12,12 +12,14 @@ const parsed = JSON.parse(fs.readFileSync('input.json'))
 
 let output = {}
 
-const MARCH27 = new Date("2020-03-27")
-const APRIL15 = new Date("2020-04-15")
 const APRIL28 = new Date("2020-04-28")
 
 for (const [day, data] of Object.entries(parsed)) {
     let datekey = day.split('.')[0]
+    let seq = parseInt(day.split('.')[1])
+    if (seq == 1 || seq == 3 || seq == 16)
+        continue
+
     let date = new Date(datekey)
     let fixed_data = []
     if (datekey == "2020-03-26") {

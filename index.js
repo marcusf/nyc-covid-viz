@@ -18,17 +18,16 @@ const parseData = (data) => {
   return [data, days, maxs]
 }
 
-const getDay = (cvd, days, day, type) => {
+const getDay = (cvd, days, day, type, deltas) => {
   let dates = getLongestSequence(cvd)
   const p = cvd.filter(l => l.reporting_date == days[day])
 
-  //
-  // {"reporting_date":"2020-03-26","date_of_interest":"2020-03-02","cases":1,"hospitalized":0,"deaths":0,"cases_new":1,"cases_last_report":0,
-  // "hospitalized_new":0,"hospitalized_last_report":0,"deaths_new":0,"deaths_last_report":0,
-  // "deaths_trailing7":0,"deaths_older7":0,"cases_trailing7":0,"cases_older7":0,"hospitilized_trailing7":0,"hospitalized_older7":0}
+  let p0 = [], p1 = []
 
-  let p0 = p.map(k => ({ "Date": k['date_of_interest'], "Type": "Reported earlier", "Count": +k[type+"_older7"]}))
-  let p1 = p.map(k => ({ "Date": k['date_of_interest'], "Type": "Reported seven days prior", "Count": +k[type+"_trailing7"]}))
+  if (!deltas) {
+    p0 = p.map(k => ({ "Date": k['date_of_interest'], "Type": "Reported earlier", "Count": +k[type+"_older7"]}))
+    p1 = p.map(k => ({ "Date": k['date_of_interest'], "Type": "Reported seven days prior", "Count": +k[type+"_trailing7"]}))
+  }
 
   let p2 = p.map(k => ({ "Date": k['date_of_interest'], "Type": `Reported ${days[day]}`, "Count": +k[type+"_new"]}))
 
@@ -36,8 +35,10 @@ const getDay = (cvd, days, day, type) => {
   let covered = p.map(k => k['date_of_interest'])
   for (date of dates) {
     if (covered.indexOf(date) == -1) {
-      fields.push({"Date": date, "Type": "Reported earlier", "Count": 0})
-      fields.push({"Date": date, "Type": "Reported seven days prior", "Count": 0})
+      if (!deltas) {
+        fields.push({"Date": date, "Type": "Reported earlier", "Count": 0})
+        fields.push({"Date": date, "Type": "Reported seven days prior", "Count": 0})
+      }
       fields.push({"Date": date, "Type": `Reported ${days[day]}`, "Count": 0})
     }
   }
@@ -64,6 +65,7 @@ const setupSlider = (data, days, maxs) => {
   document.querySelectorAll('input[name="mode"]').forEach(radio => radio.addEventListener("change", e => { 
     renderChart(data, days, maxs)
   }))
+  document.querySelector('input[id="deltas"]').addEventListener("change", e => { renderChart(data, days, maxs) })
   slider.focus()
 }
 
@@ -75,7 +77,10 @@ const renderChart = (data, days, maxs) => {
   const day = document.querySelector("#whichdate").value
 
   const form_type = document.querySelector('input[name="mode"]:checked').value
-  const [label, graph] = getDay(data, days, day, form_type)
+
+  const deltas = document.querySelector('input[id="deltas"]').checked
+
+  const [label, graph] = getDay(data, days, day, form_type, deltas)
 
   document.querySelector("#wd_label").innerHTML = `Reporting date ${label}`
 
