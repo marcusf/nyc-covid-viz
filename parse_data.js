@@ -1,36 +1,108 @@
 'use strict';
 
-// Stuff to be aware of in the data:
-// 2020-03-27: DIAGNOSIS_DATE=>DATE_OF_INTEREST
-// 2020-04-15.26: DATE_OF_INTEREST=Retrieving data. Wait a few seconds and try to cut or copy again.
-// 2020-04-28: NEW_COVID_CASE_COUNT, HOSPITALIZED_CASE_COUNT => CASE_COUNT, HOSPITALIZED_COUNT
-
+// A nicer format by doing more pre-processing. For now takes the output from parse_data as input.
 
 const fs = require('fs')
 
-const parsed = JSON.parse(fs.readFileSync('input.json'))
+const pad = ds => ds.toString().length == 2 ? ds : '0'+ds
 
-let output = {}
-
-const APRIL28 = new Date("2020-04-28")
-
-for (const [day, data] of Object.entries(parsed)) {
-    let datekey = day.split('.')[0]
-    let seq = parseInt(day.split('.')[1])
-    if (seq == 1 || seq == 3 || seq == 16)
-        continue
-
-    let date = new Date(datekey)
-    let fixed_data = []
-    if (datekey == "2020-03-26") {
-        fixed_data = data.map( ({DIAGNOSIS_DATE, NEW_COVID_CASE_COUNT, HOSPITALIZED_CASE_COUNT, DEATH_COUNT}) => {return { DATE_OF_INTEREST: DIAGNOSIS_DATE, HOSPITALIZED_CASE_COUNT, NEW_COVID_CASE_COUNT, DEATH_COUNT }})
-    } else if (datekey == "2020-04-15") {
-        fixed_data = data.map( x => {return { DATE_OF_INTEREST: x['Retrieving data. Wait a few seconds and try to cut or copy again.'], HOSPITALIZED_CASE_COUNT: x.HOSPITALIZED_CASE_COUNT, NEW_COVID_CASE_COUNT: x.NEW_COVID_CASE_COUNT, DEATH_COUNT: x.DEATH_COUNT }})
-    } else if (date >= APRIL28) {
-        fixed_data = data.map( ({DATE_OF_INTEREST, HOSPITALIZED_COUNT, CASE_COUNT, DEATH_COUNT}) => {return { DATE_OF_INTEREST, NEW_COVID_CASE_COUNT: CASE_COUNT, HOSPITALIZED_CASE_COUNT: HOSPITALIZED_COUNT, DEATH_COUNT }})
-    } else {
-        fixed_data = data
-    }
-    output[datekey] = fixed_data
+const mk_date = date => {
+    const d = new Date(date)
+    return `${d.getFullYear()}-${pad(1+d.getMonth())}-${pad(d.getDate())}`
 }
-fs.writeFileSync('data.js', `const coviddata=${JSON.stringify(output)}`)
+
+const rationalize = input => { 
+    let report_tree = {}, previous_report = null, output = []
+
+    for (const [reporting_date, data] of Object.entries(parsed).sort()) {
+        report_tree[reporting_date] = { previous_report }
+        for (const {DATE_OF_INTEREST, NEW_COVID_CASE_COUNT, HOSPITALIZED_CASE_COUNT, DEATH_COUNT} of data) {
+            const date_of_interest = mk_date(DATE_OF_INTEREST),
+                cases = +NEW_COVID_CASE_COUNT||0,
+                hospitalized = +HOSPITALIZED_CASE_COUNT||0,
+                deaths = +DEATH_COUNT||0
+            let o = { reporting_date, date_of_interest, cases, hospitalized, deaths }
+            output.push(o)
+            report_tree[reporting_date][date_of_interest] = o
+        }
+        previous_report = reporting_date
+    }
+    return [output, report_tree]
+}
+
+const calc_one_day_trail = (days, report_tree) => {
+    for (let day of days) {
+        const { reporting_date, date_of_interest, cases, hospitalized, deaths } = day
+
+        let yesterday = report_tree[reporting_date].previous_report != null ? 
+            report_tree[report_tree[reporting_date].previous_report] : null
+
+        day.cases_new = cases
+        day.cases_last_report = 0
+        day.hospitalized_new = hospitalized
+        day.hospitalized_last_report = 0
+        day.deaths_new = deaths
+        day.deaths_last_report = 0
+
+        if (yesterday) {
+            let old_today = yesterday[date_of_interest]
+
+            if (old_today) {
+                day.cases_new = cases - old_today.cases
+                day.cases_last_report = old_today.cases
+                day.hospitalized_new = hospitalized - old_today.hospitalized
+                day.hospitalized_last_report = old_today.hospitalized
+                day.deaths_new = deaths - old_today.deaths
+                day.deaths_last_report = old_today.deaths
+            }
+        } else {
+
+        }
+    }
+
+    return [days, report_tree]
+}
+
+const sum_n = (report_tree, reporting_date, date_of_interest, n, variable) => {
+    let back = 0, sum = 0
+    let yesterday = report_tree[reporting_date].previous_report
+    while (--n && yesterday) {
+        //console.log(report_tree[yesterday][date_of_interest])
+        if (report_tree[yesterday].hasOwnProperty(date_of_interest)) {
+            back += report_tree[yesterday][date_of_interest][variable]
+        } 
+        yesterday = report_tree[yesterday].previous_report
+    }
+    return back
+}
+
+// The period between -1 and -(n-1) days.
+const calc_n_day_trail = (days, report_tree, n) => {
+    for (let day of days) {
+        const { reporting_date, date_of_interest, cases, hospitalized, deaths } = day
+        let yesterday = reporting_date //report_tree[reporting_date].previous_report 
+        if (yesterday) {
+            day.deaths_trailing7 = sum_n(report_tree, yesterday, date_of_interest, 7, 'deaths_new')
+            day.deaths_older7 = day.deaths - day.deaths_new - day.deaths_trailing7
+
+            day.cases_trailing7 = sum_n(report_tree, yesterday, date_of_interest, 7, 'cases_new')
+            day.cases_older7 = day.cases - day.cases_new - day.cases_trailing7
+
+            day.hospitalized_trailing7 = sum_n(report_tree, yesterday, date_of_interest, 7, 'hospitalized_new')
+            day.hospitalized_older7 = day.hospitalized - day.hospitalized_new - day.hospitalized_trailing7
+        } else {
+            day.deaths_trailing7 = 0
+            day.deaths_older7 = 0
+            day.cases_trailing7 = 0
+            day.cases_older7 = 0
+            day.hospitalized_trailing7 = 0
+            day.hospitalized_older7 = 0
+        }
+    }
+}
+
+const parsed = JSON.parse(fs.readFileSync('cleaned.json'))
+let [output, report_tree] = rationalize(parsed)
+calc_one_day_trail(output, report_tree)
+calc_n_day_trail(output, report_tree, 7)
+fs.writeFileSync('data.js', `let coviddata=${JSON.stringify(output)}`)
