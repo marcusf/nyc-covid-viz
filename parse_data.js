@@ -101,8 +101,17 @@ const calc_n_day_trail = (days, report_tree, n) => {
     }
 }
 
+const write_csv = (data) => {
+    let output = data.map(({reporting_date, date_of_interest, cases, hospitalized, deaths }) => 
+        `${reporting_date},${date_of_interest},${cases},${hospitalized},${deaths}`
+    )
+    console.log(output)
+    return "REPORTING_DATE,DATE_OF_INTEREST,CASES,HOSPITALIZED,DEATHS\n" + output.join("\n")
+}
+
 const parsed = JSON.parse(fs.readFileSync('cleaned.json'))
 let [output, report_tree] = rationalize(parsed)
 calc_one_day_trail(output, report_tree)
 calc_n_day_trail(output, report_tree, 7)
 fs.writeFileSync('data.js', `let coviddata=${JSON.stringify(output)}`)
+fs.writeFileSync('nyc_covid_latest.csv', write_csv(output))
