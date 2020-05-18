@@ -105,7 +105,6 @@ const write_csv = (data) => {
     let output = data.map(({reporting_date, date_of_interest, cases, hospitalized, deaths }) => 
         `${reporting_date},${date_of_interest},${cases},${hospitalized},${deaths}`
     )
-    console.log(output)
     return "REPORTING_DATE,DATE_OF_INTEREST,CASES,HOSPITALIZED,DEATHS\n" + output.join("\n")
 }
 
