@@ -28,6 +28,9 @@ for (const [day, data] of Object.entries(parsed)) {
         fixed_data = data.map( x => {return { DATE_OF_INTEREST: x['Retrieving data. Wait a few seconds and try to cut or copy again.'], HOSPITALIZED_CASE_COUNT: x.HOSPITALIZED_CASE_COUNT, NEW_COVID_CASE_COUNT: x.NEW_COVID_CASE_COUNT, DEATH_COUNT: x.DEATH_COUNT }})
     } else if (date >= APRIL28) {
         fixed_data = data.map( ({DATE_OF_INTEREST, HOSPITALIZED_COUNT, CASE_COUNT, DEATH_COUNT}) => {return { DATE_OF_INTEREST, NEW_COVID_CASE_COUNT: CASE_COUNT, HOSPITALIZED_CASE_COUNT: HOSPITALIZED_COUNT, DEATH_COUNT }})
+        if (datekey == "2020-07-07") {
+            fixed_data.pop()
+        }
     } else {
         fixed_data = data
     }
